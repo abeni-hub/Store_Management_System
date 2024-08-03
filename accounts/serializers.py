@@ -1,32 +1,36 @@
 from rest_framework import serializers
-from .models import UserAccount, Role, Category, SubCategory, Electronics, Stock, Sale
+from .models import UserAccount,Cashier, Role, Expense, SubCategory, Electronics, Sales,Category, SalesSummary
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
         fields = '__all__'
 
+
+
 class UserAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAccount
-        fields = ['id', 'email', 'name', 'is_active', 'is_staff', 'role']
+        fields = ['id', 'password', 'email', 'name', 'is_active', 'role']
+class CashierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cashier
+        fields = ['email', 'name', 'password', 'phone_number']  # Include the new fields
 
+    def create(self, validated_data):
+        # Create a new cashier instance
+        cashier = Cashier(
+            email=validated_data['email'],
+            name=validated_data['name'],
+            phone_number=validated_data['phone_number']
+        )
+        cashier.set_password(validated_data['password'])  # Hash the password
+        cashier.save()
+        return cashier
 class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAccount
-        fields = ['email', 'name', 'password', 'role']
-        extra_kwargs = {'password': {'write_only': True}}
-
-    def create(self, validated_data):
-        user = UserAccount(
-            email=validated_data['email'],
-            name=validated_data['name'],
-            role=validated_data.get('role')
-        )
-        user.set_password(validated_data['password'])
-        user.save()
-        return user
-
+        fields = ['email', 'name', 'password', 'role']  # Include any other fields needed for creation
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -42,12 +46,17 @@ class ElectronicsSerializer(serializers.ModelSerializer):
         model = Electronics
         fields = '__all__'
 
-class StockSerializer(serializers.ModelSerializer):
+class SalesSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Stock
+        model = Sales
+        fields = ['id', 'item_name', 'category', 'subcategory', 'quantity', 'selling_price', 'seller_name']
+
+class SalesSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SalesSummary
         fields = '__all__'
 
-class SaleSerializer(serializers.ModelSerializer):
+class ExpenseSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Sale
+        model = Expense
         fields = '__all__'
