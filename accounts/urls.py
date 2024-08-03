@@ -1,22 +1,30 @@
-# sales/urls.py
-from django.urls import path , include
+from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import RoleViewSet, UserAccountViewSet,UserCreateView, CategoryViewSet, SubCategoryViewSet, ElectronicsViewSet, StockViewSet, SaleViewSet
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
+from .views import (
+    UserAccountViewSet,
+    UserCreateViewSet,
+    RoleViewSet,
+    CategoryViewSet,
+    SubCategoryViewSet,
+    ElectronicsViewSet,
+    SaleViewSet,
+    CashierCreateViewSet,
+    SalesSummaryViewSet,
+    ExpenseViewSet,
 )
+
 router = DefaultRouter()
-router.register(r'roles', RoleViewSet)
 router.register(r'users', UserAccountViewSet)
+router.register(r'users/create', UserCreateViewSet, basename='user-create')  # Add the create endpoint
+router.register(r'roles', RoleViewSet)
+router.register(r'cashiers', CashierCreateViewSet, basename='cashier-create')
 router.register(r'categories', CategoryViewSet)
 router.register(r'subcategories', SubCategoryViewSet)
 router.register(r'electronics', ElectronicsViewSet)
-router.register(r'stocks', StockViewSet)
 router.register(r'sales', SaleViewSet)
+router.register(r'sales-summary', SalesSummaryViewSet)
+router.register(r'expenses', ExpenseViewSet, basename='expense')
+
 urlpatterns = [
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('create-user/', UserCreateView.as_view(), name='create-user'),
     path('', include(router.urls)),
 ]
