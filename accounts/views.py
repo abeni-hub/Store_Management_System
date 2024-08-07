@@ -1,5 +1,9 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
+from django.utils import timezone
+from django.db.models import Sum
+from datetime import timedelta
+from datetime import date
 from rest_framework import status
 from .models import UserAccount, Cashier , Role, Category, SubCategory, Electronics, Sales, SalesSummary, Expense
 from .serializers import (
@@ -64,9 +68,48 @@ class ElectronicsViewSet(viewsets.ModelViewSet):
     queryset = Electronics.objects.all()
     serializer_class = ElectronicsSerializer
 
-class SaleViewSet(viewsets.ModelViewSet):
+class SalesViewSet(viewsets.ModelViewSet):
     queryset = Sales.objects.all()
     serializer_class = SalesSerializer
+
+    def get_sales_summary(self):
+        today = timezone.now().date()
+
+        # Daily sales
+        daily_sales = Sales.objects.filter(date=today).values(
+            'item_name', 'category', 'sub_category'
+        ).annotate(total_quantity=Sum('quantity'))
+
+        # Weekly sales
+        start_of_week = today - timedelta(days=today.weekday())  # Monday as the start of the week
+        weekly_sales = Sales.objects.filter(date__gte=start_of_week).values(
+            'item_name', 'category', 'sub_category'
+        ).annotate(total_quantity=Sum('quantity'))
+
+        # Monthly sales
+        start_of_month = today.replace(day=1)
+        monthly_sales = Sales.objects.filter(date__gte=start_of_month).values(
+            'item_name', 'category', 'sub_category'
+        ).annotate(total_quantity=Sum('quantity'))
+
+        return {
+            'daily_sales': list(daily_sales),
+            'weekly_sales': list(weekly_sales),
+            'monthly_sales': list(monthly_sales)
+        }
+
+    def list(self, request, *args, **kwargs):
+        # Get the sales summary
+        summary = self.get_sales_summary()
+
+        # Get the usual queryset
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+
+        return Response({
+            'sales': serializer.data,
+            'summary': summary
+        })
 
 class SalesSummaryViewSet(viewsets.ModelViewSet):
     queryset = SalesSummary.objects.all()

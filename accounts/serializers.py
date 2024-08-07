@@ -49,7 +49,7 @@ class ElectronicsSerializer(serializers.ModelSerializer):
 class SalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sales
-        fields = ['id', 'item_name', 'category', 'subcategory', 'quantity', 'selling_price', 'seller_name']
+        fields = ['id', 'item_name', 'category', 'sub_category', 'quantity','date', 'selling_price', 'seller_name']
 
 class SalesSummarySerializer(serializers.ModelSerializer):
     class Meta:

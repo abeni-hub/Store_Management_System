@@ -7,7 +7,7 @@ from .views import (
     CategoryViewSet,
     SubCategoryViewSet,
     ElectronicsViewSet,
-    SaleViewSet,
+    SalesViewSet,
     CashierCreateViewSet,
     SalesSummaryViewSet,
     ExpenseViewSet,
@@ -21,7 +21,7 @@ router.register(r'cashiers', CashierCreateViewSet, basename='cashier-create')
 router.register(r'categories', CategoryViewSet)
 router.register(r'subcategories', SubCategoryViewSet)
 router.register(r'electronics', ElectronicsViewSet)
-router.register(r'sales', SaleViewSet)
+router.register(r'sales', SalesViewSet)
 router.register(r'sales-summary', SalesSummaryViewSet)
 router.register(r'expenses', ExpenseViewSet, basename='expense')
 
