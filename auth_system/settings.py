@@ -39,8 +39,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_simplejwt',
+    'django_celery_beat',
     'djoser',
     'accounts',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -51,9 +55,26 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'auth_system.urls'
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173',  # Vite development server
+]
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
+]
+CORS_ALLOW_HEADERS = [
+    'content-type',
+    'authorization',
+]
 
 TEMPLATES = [
     {
@@ -134,33 +155,38 @@ STATIC_ROOT = os.path.join(BASE_DIR , 'static')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
-    # 'DEFAULT_PERMISSION_CLASSES': [
-    #     'rest_framework.permissions.IsAuthenticated'
-    # ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
     ),
+     'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.AllowAny',
+    ],
+
 }
 SIMPLE_JWT = {
-   'AUTH_HEADER_TYPES': ('JWT',),
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
+JWT_AUTH = {
+    'JWT_RESPONSE_PAYLOAD_HANDLER': 'accounts.utils.my_custom_jwt_response_handler',
+}
+
 DJOSER = {
-    'LOGIN_FILED':'email',
-    'USERNAME_CHANGED_EMAIL_CONFIRMATION': True,
+    'LOGIN_FIELD': 'email',
     'USERNAME_CHANGED_EMAIL_CONFIRMATION': True,
     'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
     'SEND_CONFIRMATION_EMAIL': True,
-    'SET_USERNAME_RETYPE': True ,
-    'SET_PASSWORD_RETYPE': True ,
-    'PASSWORD_RESET_CONFIRM_URL':'password/reset/confirm/{uid}/{token}',
-    'USERNAME_RESET_CONFIRM_URL':'email/reset/confirm/{uid}/{token}',
-    'ACTIVATION_URL':'activate/{uid}/{token}',
-    'SEND_ACTIVATION_EMAIL': True ,
-    'SERIALIZERS':{
-        'user_create':'accounts.serializers.UserCreateSerializer',
-        'user':'accounts.serializers.UserCreateSerializer',
-        'user_delete':'djoser.serializers.UserDeleteSerializer',
-
+    'SET_USERNAME_RETYPE': True,
+    'SET_PASSWORD_RETYPE': True,
+    'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
+    'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}',
+    'ACTIVATION_URL': 'activate/{uid}/{token}',
+    'SEND_ACTIVATION_EMAIL': False,  # Email activation is turned off
+    'SERIALIZERS': {
+        'user_create': 'accounts.serializers.UserCreateSerializer',
+        'user': 'accounts.serializers.UserSerializer',  # Ensure this path is correct
+        'user_delete': 'djoser.serializers.UserDeleteSerializer',
     },
 }
 AUTH_USER_MODEL = 'accounts.UserAccount'

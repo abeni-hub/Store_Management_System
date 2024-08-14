@@ -1,5 +1,18 @@
 from rest_framework import serializers
-from .models import UserAccount,Cashier, Role, Expense, SubCategory, Electronics, Sales,Category, SalesSummary
+from .models import UserAccount, Cashier, Role, Expense, SubCategory, Electronics, Sales, Category, SalesSummary
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Add custom claims
+        token['role'] = user.role
+
+        return token
+
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -7,15 +20,17 @@ class RoleSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
 class UserAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAccount
-        fields = ['id', 'password', 'email', 'name', 'is_active', 'role']
+        fields = ['id', 'email', 'name', 'is_active', 'role']
+        # Do not include 'password' in this serializer to avoid security issues
+
+
 class CashierSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cashier
-        fields = ['email', 'name', 'password', 'phone_number']  # Include the new fields
+        fields = ['email', 'name', 'phone_number']  # Exclude password field
 
     def create(self, validated_data):
         # Create a new cashier instance
@@ -27,34 +42,61 @@ class CashierSerializer(serializers.ModelSerializer):
         cashier.set_password(validated_data['password'])  # Hash the password
         cashier.save()
         return cashier
+
+
 class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAccount
-        fields = ['email', 'name', 'password', 'role']  # Include any other fields needed for creation
+        fields = ('id', 'email', 'name', 'password', 'role')
+        extra_kwargs = {
+            'password': {'write_only': True}  # Ensure password is write-only
+        }
+
+    def create(self, validated_data):
+        user = UserAccount.objects.create_user(
+            email=validated_data['email'],
+            name=validated_data['name'],
+            password=validated_data['password'],
+            role=validated_data.get('role', '')  # Ensure role is included
+        )
+        return user
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserAccount
+        fields = ('id', 'email', 'name', 'role')
+
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = '__all__'
+
 
 class SubCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = SubCategory
         fields = '__all__'
 
+
 class ElectronicsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Electronics
         fields = '__all__'
 
+
 class SalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sales
-        fields = ['id', 'item_name', 'category', 'sub_category', 'quantity','date', 'selling_price', 'seller_name']
+        fields = '__all__'
+
 
 class SalesSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = SalesSummary
         fields = '__all__'
+
 
 class ExpenseSerializer(serializers.ModelSerializer):
     class Meta:
