@@ -80,7 +80,7 @@ CORS_ALLOW_HEADERS = [
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR , 'build')],
+        'DIRS': [],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -147,9 +147,9 @@ EMAIL_USE_TLS = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR , 'build/static')
-]
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR , 'build/static')
+# ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
     # ...
