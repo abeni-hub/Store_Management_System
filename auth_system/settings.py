@@ -25,8 +25,7 @@ SECRET_KEY = 'django-insecure-u161g!7kb05@ou5x+nmtz0rg(zp+saa!wswhj-vlw1x_2399h=
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -62,7 +61,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'auth_system.urls'
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',  # Vite development server
+    'https://mero-app.brhantech.com',  # Vite development server
 ]
 CORS_ALLOW_METHODS = [
     'GET',
@@ -137,23 +136,26 @@ USE_I18N = True
 
 USE_TZ = True
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = '587'
-EMAIL_HOST_USER = 'abinesilew@gmail.com'
-EMAIL_HOST_PASSWORD ='rskeaywfstazwhry'
-EMAIL_USE_TLS = True
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = '587'
+# EMAIL_HOST_USER = 'abinesilew@gmail.com'
+# EMAIL_HOST_PASSWORD ='rskeaywfstazwhry'
+# EMAIL_USE_TLS = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR ,"static")
-# STORAGES = {
-#     # ...
-#     "staticfiles": {
-#         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-#     },
-# }
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR , 'build/static')
+# ]
+STATIC_ROOT = os.path.join(BASE_DIR , 'static')
+STORAGES = {
+    # ...
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -194,3 +196,6 @@ DJOSER = {
     },
 }
 AUTH_USER_MODEL = 'accounts.UserAccount'
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
