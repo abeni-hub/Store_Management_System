@@ -1,31 +1,27 @@
 from rest_framework import serializers
-from .models import UserAccount, Cashier, Role, Expense, SubCategory, Electronics, Sales, Category, SalesSummary
+from .models import Revenue, UserAccount, Cashier, Role, Expense,Exchange, SubCategory, Electronics, Sales, Category, SalesSummary,Buying
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-
+        
         # Add custom claims
         token['role'] = user.role
-
+        
         return token
-
-
+    
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
         fields = '__all__'
-
 
 class UserAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAccount
         fields = ['id', 'email', 'name', 'is_active', 'role']
         # Do not include 'password' in this serializer to avoid security issues
-
 
 class CashierSerializer(serializers.ModelSerializer):
     class Meta:
@@ -42,7 +38,6 @@ class CashierSerializer(serializers.ModelSerializer):
         cashier.set_password(validated_data['password'])  # Hash the password
         cashier.save()
         return cashier
-
 
 class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -61,44 +56,51 @@ class UserCreateSerializer(serializers.ModelSerializer):
         )
         return user
 
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserAccount
         fields = ('id', 'email', 'name', 'role')
-
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = '__all__'
 
-
 class SubCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = SubCategory
         fields = '__all__'
-
 
 class ElectronicsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Electronics
         fields = '__all__'
 
+class BuyingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Buying
+        fields = '__all__'
 
 class SalesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sales
         fields = '__all__'
 
+class ExchangeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Exchange
+        fields = '__all__'
 
 class SalesSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = SalesSummary
         fields = '__all__'
 
-
 class ExpenseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Expense
+        fields = '__all__'
+class RevenueSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Revenue
         fields = '__all__'
