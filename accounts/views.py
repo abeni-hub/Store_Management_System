@@ -13,18 +13,21 @@ from datetime import timedelta
 from rest_framework import status
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from django.http import JsonResponse
-from .models import UserAccount, Cashier, Role, Category, SubCategory, Electronics, Sales, SalesSummary, Expense
+from .models import Exchange,Buying, Revenue, UserAccount, Cashier, Role, Category, SubCategory, Electronics, Sales, SalesSummary, Expense
 from .serializers import (
+    RevenueSerializer,
     UserAccountSerializer,
     UserCreateSerializer,
     RoleSerializer,
     CategorySerializer,
     SubCategorySerializer,
     ElectronicsSerializer,
+    BuyingSerializer,
     SalesSerializer,
     CashierSerializer,
     SalesSummarySerializer,
     ExpenseSerializer,
+    ExchangeSerializer,
 )
 
 
@@ -104,6 +107,10 @@ class ElectronicsViewSet(viewsets.ModelViewSet):
     queryset = Electronics.objects.all()
     serializer_class = ElectronicsSerializer
 
+class BuyingViewSet(viewsets.ModelViewSet):
+    queryset = Buying.objects.all()
+    serializer_class = BuyingSerializer
+
 
 class SaleViewSet(viewsets.ModelViewSet):
     queryset = Sales.objects.all()
@@ -118,8 +125,12 @@ class SalesSummaryViewSet(viewsets.ModelViewSet):
 class ExpenseViewSet(viewsets.ModelViewSet):
     queryset = Expense.objects.all()  # Get all expenses
     serializer_class = ExpenseSerializer  # Use the Expense serializer
-
-
+class RevenueViewSet(viewsets.ModelViewSet):
+    queryset = Revenue.objects.all()  # Get all expenses
+    serializer_class = RevenueSerializer  # Use the Expense serializer
+class ExchangeViewSet(viewsets.ModelViewSet):
+    queryset = Exchange.objects.all()  # Get all expenses
+    serializer_class = ExchangeSerializer  # Use the Expense serializer
 class SalesSummaryView(APIView):
     def get_sales_expenses(self, start_date, end_date):
         sales = Sales.objects.filter(date__range=(start_date, end_date)).aggregate(
