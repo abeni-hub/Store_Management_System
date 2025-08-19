@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import SalesSummaryView
+from .views import ExchangeViewSet, RevenueViewSet, SalesSummaryView
 from .serializers import CustomTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -15,6 +15,7 @@ from .views import (
     CashierCreateViewSet,
     SalesSummaryViewSet,
     ExpenseViewSet,
+    BuyingViewSet,
     UserDetail
 )
 
@@ -26,13 +27,18 @@ router.register(r'cashiers', CashierCreateViewSet, basename='cashier-create')
 router.register(r'categories', CategoryViewSet)
 router.register(r'subcategories', SubCategoryViewSet)
 router.register(r'electronics', ElectronicsViewSet)
+
+router.register(r'buying', BuyingViewSet)
 router.register(r'sales', SaleViewSet)
+router.register(r'exchange', ExchangeViewSet)
+
+router.register(r'revenue', RevenueViewSet)
 router.register(r'sales-summary', SalesSummaryViewSet)
 router.register(r'expenses', ExpenseViewSet, basename='expense')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('api/sales-summary/<str:period>/', SalesSummaryView.as_view(), name='sales-summary'),
+        path('api/sales-summary/<str:period>/', SalesSummaryView.as_view(), name='sales-summary'),
     path('auth/jwt/create/', TokenObtainPairView.as_view(serializer_class=CustomTokenObtainPairSerializer), name='token_obtain_pair'),
     path('user-detail/', UserDetail, name= "UserDetail")
 
