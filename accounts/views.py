@@ -7,7 +7,13 @@ from django.core import serializers
 from django.db.models import Sum
 from rest_framework import permissions
 from rest_framework.permissions import AllowAny
-
+from rest_framework.decorators import action
+import openpyxl
+import datetime
+from django.db.models import F
+from django.db.models.functions import TruncMonth, ExtractWeekDay
+from django.http import HttpResponse
+from django.db import models
 from django.utils.timezone import now
 from datetime import timedelta
 from rest_framework import status
@@ -102,15 +108,162 @@ class SubCategoryViewSet(viewsets.ModelViewSet):
     queryset = SubCategory.objects.all()
     serializer_class = SubCategorySerializer
 
-
 class ElectronicsViewSet(viewsets.ModelViewSet):
     queryset = Electronics.objects.all()
     serializer_class = ElectronicsSerializer
 
+    # 🔹 Export to Excel
+    @action(detail=False, methods=["get"])
+    def export_excel(self, request):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Electronics"
+
+        ws.append(["ID", "Name", "Size", "Quantity", "Buying Price", "Date Added", "Added By", "Capital"])
+
+        for obj in Electronics.objects.all():
+            capital = obj.quantity * obj.buying_price
+            ws.append([
+                obj.id, obj.name, obj.size, obj.quantity,
+                obj.buying_price, obj.date_added, obj.added_by, capital
+            ])
+
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = 'attachment; filename="electronics.xlsx"'
+        wb.save(response)
+        return response
+
+    # 🔹 Summary API (all stats in one response)
+    @action(detail=False, methods=["get"])
+    def summary(self, request):
+        total_quantity = Electronics.objects.aggregate(total=models.Sum("quantity"))["total"] or 0
+        total_capital = Electronics.objects.aggregate(
+            total_capital=models.Sum(models.F("quantity") * models.F("buying_price"))
+        )["total_capital"] or 0
+
+        per_item_quantities = list(
+            Electronics.objects.values("name").annotate(total_quantity=models.Sum("quantity"))
+        )
+        per_item_capitals = list(
+            Electronics.objects.values("name").annotate(
+                total_capital=models.Sum(models.F("quantity") * models.F("buying_price"))
+            )
+        )
+
+        return Response({
+            "total_quantity": total_quantity,
+            "total_capital": total_capital,
+            "per_item_quantities": per_item_quantities,
+            "per_item_capitals": per_item_capitals
+        })
+
+
+# -----------------------------
+# 📦 Buying ViewSet
+# -----------------------------
 class BuyingViewSet(viewsets.ModelViewSet):
     queryset = Buying.objects.all()
     serializer_class = BuyingSerializer
 
+    # 🔹 Export Buying to Excel
+    @action(detail=False, methods=["get"])
+    def export_excel(self, request):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Buying"
+
+        ws.append(["ID", "Name", "Size", "Quantity", "Buying Price", "Date Added", "Added By", "Capital"])
+
+        for obj in Buying.objects.all():
+            capital = obj.quantity * obj.buying_price
+            ws.append([
+                obj.id, obj.name, obj.size, obj.quantity,
+                obj.buying_price, obj.date_added, obj.added_by, capital
+            ])
+
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = 'attachment; filename="buying.xlsx"'
+        wb.save(response)
+        return response
+
+    @action(detail=False, methods=["get"])
+    def summary(self, request):
+        total_quantity = Buying.objects.aggregate(total=Sum("quantity"))["total"] or 0
+        total_capital = Buying.objects.aggregate(
+            total_capital=Sum(F("quantity") * F("buying_price"))
+        )["total_capital"] or 0
+
+        per_item_quantities = list(
+            Buying.objects.values("name").annotate(total_quantity=Sum("quantity"))
+        )
+        per_item_capitals = list(
+            Buying.objects.values("name").annotate(
+                total_capital=Sum(F("quantity") * F("buying_price"))
+            )
+        )
+
+        return Response({
+            "total_quantity": total_quantity,
+            "total_capital": total_capital,
+            "per_item_quantities": per_item_quantities,
+            "per_item_capitals": per_item_capitals
+        })
+
+    # -----------------------------
+    # 📊 Analytics API
+    # -----------------------------
+    @action(detail=False, methods=["get"])
+    def analytics(self, request):
+        today = datetime.date.today()
+
+        # 🔹 Today total
+        today_total = Buying.objects.filter(date_added=today).aggregate(
+            total=Sum(F("quantity") * F("buying_price"))
+        )["total"] or 0
+
+        # 🔹 Weekly total (current week)
+        week_start = today - datetime.timedelta(days=today.weekday())  # Monday start
+        week_end = week_start + datetime.timedelta(days=6)
+        weekly_total = Buying.objects.filter(date_added__range=[week_start, week_end]).aggregate(
+            total=Sum(F("quantity") * F("buying_price"))
+        )["total"] or 0
+
+        # 🔹 Weekly breakdown (Mon-Sun, across all data)
+        weekday_data = Buying.objects.annotate(
+            weekday=ExtractWeekDay("date_added")
+        ).values("weekday").annotate(
+            total=Sum(F("quantity") * F("buying_price"))
+        ).order_by("weekday")
+
+        # Map Django weekday (1=Sunday, 2=Monday … 7=Saturday) to readable names
+        weekday_map = {
+            1: "Sunday", 2: "Monday", 3: "Tuesday", 4: "Wednesday",
+            5: "Thursday", 6: "Friday", 7: "Saturday"
+        }
+        weekly_breakdown = {weekday_map[item["weekday"]]: item["total"] for item in weekday_data}
+
+        # 🔹 Monthly totals
+        monthly_data = Buying.objects.annotate(
+            month=TruncMonth("date_added")
+        ).values("month").annotate(
+            total=Sum(F("quantity") * F("buying_price"))
+        ).order_by("month")
+
+        monthly_totals = [
+            {"month": item["month"].strftime("%B %Y"), "total": item["total"]}
+            for item in monthly_data
+        ]
+
+        return Response({
+            "today_total": today_total,
+            "weekly_total": weekly_total,
+            "weekly_breakdown": weekly_breakdown,
+            "monthly_totals": monthly_totals
+        })
 
 class SaleViewSet(viewsets.ModelViewSet):
     queryset = Sales.objects.all()
