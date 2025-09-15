@@ -270,14 +270,193 @@ class SaleViewSet(viewsets.ModelViewSet):
     serializer_class = SalesSerializer
 
 
+    @action(detail=False, methods=["get"])
+    def export_excel(self, request):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Sales"
+
+        ws.append([
+            "ID", "Item Name", "Category", "Subcategory", "Size",
+            "Quantity", "Selling Price", "Total Sale", "Profit",
+            "Commission", "Credit", "Buyer", "Seller",
+            "Status", "Payment Method", "Date"
+        ])
+
+        for obj in Sales.objects.all():
+            total_sale = obj.quantity * obj.selling_price
+            ws.append([
+                obj.id, obj.item_name, obj.main_category.name, obj.sub_category.name,
+                obj.size, obj.quantity, obj.selling_price, total_sale,
+                obj.profit, obj.commission_amount, obj.credit_amount,
+                obj.buyer_name, obj.seller_name, obj.status, obj.payment_method, obj.date
+            ])
+
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = 'attachment; filename="sales.xlsx"'
+        wb.save(response)
+        return response
+
+    @action(detail=False, methods=["get"])
+    def analytics(self, request):
+        today = datetime.date.today()
+
+        # 🔹 Sales Capital Today
+        today_sales = Sales.objects.filter(date=today).aggregate(
+            total=Sum(F("quantity") * F("selling_price"))
+        )["total"] or 0
+
+        # 🔹 Profit Today
+        today_profit = Sales.objects.filter(date=today).aggregate(
+            profit=Sum("profit")
+        )["profit"] or 0
+
+        # 🔹 Weekly totals (Mon–Sun current week)
+        week_start = today - datetime.timedelta(days=today.weekday())  # Monday start
+        week_end = week_start + datetime.timedelta(days=6)
+
+        weekly_sales = Sales.objects.filter(date__range=[week_start, week_end]).aggregate(
+            total=Sum(F("quantity") * F("selling_price"))
+        )["total"] or 0
+
+        weekly_profit = Sales.objects.filter(date__range=[week_start, week_end]).aggregate(
+            profit=Sum("profit")
+        )["profit"] or 0
+
+        # 🔹 Weekly breakdown per weekday (all data)
+        sales_weekday_data = Sales.objects.annotate(
+            weekday=ExtractWeekDay("date")
+        ).values("weekday").annotate(
+            total=Sum(F("quantity") * F("selling_price")),
+            profit=Sum("profit")
+        ).order_by("weekday")
+
+        weekday_map = {
+            1: "Sunday", 2: "Monday", 3: "Tuesday", 4: "Wednesday",
+            5: "Thursday", 6: "Friday", 7: "Saturday"
+        }
+
+        weekly_breakdown = {
+            weekday_map[item["weekday"]]: {
+                "sales": item["total"] or 0,
+                "profit": item["profit"] or 0
+            }
+            for item in sales_weekday_data
+        }
+
+        # 🔹 Monthly totals
+        monthly_sales_data = Sales.objects.annotate(
+            month=TruncMonth("date")
+        ).values("month").annotate(
+            total=Sum(F("quantity") * F("selling_price")),
+            profit=Sum("profit")
+        ).order_by("month")
+
+        monthly_totals = [
+            {
+                "month": item["month"].strftime("%B %Y"),
+                "sales": item["total"] or 0,
+                "profit": item["profit"] or 0
+            }
+            for item in monthly_sales_data
+        ]
+
+        return Response({
+            "today_sales": today_sales,
+            "today_profit": today_profit,
+            "weekly_sales": weekly_sales,
+            "weekly_profit": weekly_profit,
+            "weekly_breakdown": weekly_breakdown,
+            "monthly_totals": monthly_totals
+        })
+
+
+# -----------------------------
+# 📦 Expense ViewSet
+# -----------------------------
+class ExpenseViewSet(viewsets.ModelViewSet):
+    queryset = Expense.objects.all()
+    serializer_class = ExpenseSerializer
+
+
+ 
+    @action(detail=False, methods=["get"])
+    def export_excel(self, request):
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Expenses"
+
+        ws.append(["ID", "Name", "Amount", "Date", "Description", "Verified?"])
+
+        for obj in Expense.objects.all():
+            ws.append([obj.id, obj.name, obj.amount, obj.date, obj.description, obj.is_verified])
+
+        response = HttpResponse(
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        response["Content-Disposition"] = 'attachment; filename="expenses.xlsx"'
+        wb.save(response)
+        return response
+
+    @action(detail=False, methods=["get"])
+    def analytics(self, request):
+        today = datetime.date.today()
+
+        # 🔹 Today
+        today_total = Expense.objects.filter(date=today).aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+
+        # 🔹 Weekly
+        week_start = today - datetime.timedelta(days=today.weekday())
+        week_end = week_start + datetime.timedelta(days=6)
+
+        weekly_total = Expense.objects.filter(date__range=[week_start, week_end]).aggregate(
+            total=Sum("amount")
+        )["total"] or 0
+
+        # 🔹 Weekly breakdown
+        weekly_data = Expense.objects.annotate(
+            weekday=ExtractWeekDay("date")
+        ).values("weekday").annotate(
+            total=Sum("amount")
+        ).order_by("weekday")
+
+        weekday_map = {
+            1: "Sunday", 2: "Monday", 3: "Tuesday", 4: "Wednesday",
+            5: "Thursday", 6: "Friday", 7: "Saturday"
+        }
+        weekly_breakdown = {weekday_map[item["weekday"]]: item["total"] or 0 for item in weekly_data}
+
+        # 🔹 Monthly
+        monthly_data = Expense.objects.annotate(
+            month=TruncMonth("date")
+        ).values("month").annotate(
+            total=Sum("amount")
+        ).order_by("month")
+
+        monthly_totals = [
+            {"month": item["month"].strftime("%B %Y"), "total": item["total"] or 0}
+            for item in monthly_data
+        ]
+
+        return Response({
+            "today_total": today_total,
+            "weekly_total": weekly_total,
+            "weekly_breakdown": weekly_breakdown,
+            "monthly_totals": monthly_totals
+        })
+
+
+
+
 class SalesSummaryViewSet(viewsets.ModelViewSet):
     queryset = SalesSummary.objects.all()
     serializer_class = SalesSummarySerializer
 
 
-class ExpenseViewSet(viewsets.ModelViewSet):
-    queryset = Expense.objects.all()  # Get all expenses
-    serializer_class = ExpenseSerializer  # Use the Expense serializer
 class RevenueViewSet(viewsets.ModelViewSet):
     queryset = Revenue.objects.all()  # Get all expenses
     serializer_class = RevenueSerializer  # Use the Expense serializer
