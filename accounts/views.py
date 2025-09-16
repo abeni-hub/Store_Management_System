@@ -268,6 +268,70 @@ class BuyingViewSet(viewsets.ModelViewSet):
 class SaleViewSet(viewsets.ModelViewSet):
     queryset = Sales.objects.all()
     serializer_class = SalesSerializer
+    
+
+    @action(detail=False, methods=["get"])
+    def today_sales(self, request):
+        today = datetime.date.today()
+        total = Sales.objects.filter(date=today).aggregate(
+            total=Sum(F("quantity") * F("selling_price"))
+        )["total"] or 0
+        return Response({"today_sales_total": total})
+
+    # ✅ Weekly sales totals by weekday
+    @action(detail=False, methods=["get"])
+    def weekly_sales(self, request):
+        today = datetime.date.today()
+        week_start = today - datetime.timedelta(days=today.weekday())
+        data = (
+            Sales.objects.filter(date__gte=week_start, date__lte=today)
+            .values("date")
+            .annotate(total=Sum(F("quantity") * F("selling_price")))
+            .order_by("date")
+        )
+        return Response(list(data))
+
+    # ✅ Monthly sales totals
+    @action(detail=False, methods=["get"])
+    def monthly_sales(self, request):
+        today = datetime.date.today()
+        month_start = today.replace(day=1)
+        total = (
+            Sales.objects.filter(date__gte=month_start, date__lte=today)
+            .aggregate(total=Sum(F("quantity") * F("selling_price")))
+        )["total"] or 0
+        return Response({"monthly_sales_total": total})
+
+    # ✅ Today profit
+    @action(detail=False, methods=["get"])
+    def today_profit(self, request):
+        today = datetime.date.today()
+        total = Sales.objects.filter(date=today).aggregate(total=Sum("profit"))["total"] or 0
+        return Response({"today_profit": total})
+
+    # ✅ Weekly profit by day
+    @action(detail=False, methods=["get"])
+    def weekly_profit(self, request):
+        today = datetime.date.today()
+        week_start = today - datetime.timedelta(days=today.weekday())
+        data = (
+            Sales.objects.filter(date__gte=week_start, date__lte=today)
+            .values("date")
+            .annotate(total_profit=Sum("profit"))
+            .order_by("date")
+        )
+        return Response(list(data))
+
+    # ✅ Monthly profit
+    @action(detail=False, methods=["get"])
+    def monthly_profit(self, request):
+        today = datetime.date.today()
+        month_start = today.replace(day=1)
+        total = (
+            Sales.objects.filter(date__gte=month_start, date__lte=today)
+            .aggregate(total=Sum("profit"))
+        )["total"] or 0
+        return Response({"monthly_profit": total})
 
 
     @action(detail=False, methods=["get"])
@@ -399,6 +463,37 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         response["Content-Disposition"] = 'attachment; filename="expenses.xlsx"'
         wb.save(response)
         return response
+    
+    @action(detail=False, methods=["get"])
+    def today_expenses(self, request):
+        today = datetime.date.today()
+        total = Expense.objects.filter(date=today).aggregate(total=Sum("amount"))["total"] or 0
+        return Response({"today_expenses": total})
+
+    # ✅ Weekly Expenses
+    @action(detail=False, methods=["get"])
+    def weekly_expenses(self, request):
+        today = datetime.date.today()
+        week_start = today - datetime.timedelta(days=today.weekday())
+        data = (
+            Expense.objects.filter(date__gte=week_start, date__lte=today)
+            .values("date")
+            .annotate(total=Sum("amount"))
+            .order_by("date")
+        )
+        return Response(list(data))
+
+    # ✅ Monthly Expenses
+    @action(detail=False, methods=["get"])
+    def monthly_expenses(self, request):
+        today = datetime.date.today()
+        month_start = today.replace(day=1)
+        total = (
+            Expense.objects.filter(date__gte=month_start, date__lte=today)
+            .aggregate(total=Sum("amount"))
+        )["total"] or 0
+        return Response({"monthly_expenses": total})
+
 
     @action(detail=False, methods=["get"])
     def analytics(self, request):
