@@ -25,7 +25,8 @@ SECRET_KEY = 'django-insecure-u161g!7kb05@ou5x+nmtz0rg(zp+saa!wswhj-vlw1x_2399h=
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-ALLOWED_HOSTS = ['*']
+
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -40,7 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
-    'django_celery_beat',
+    
     'djoser',
     'accounts',
     'corsheaders',
@@ -48,20 +49,19 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
 ]
 
 ROOT_URLCONF = 'auth_system.urls'
 CORS_ALLOWED_ORIGINS = [
-    'https://mero-app.brhantech.com',  # Vite development server
+    'http://localhost:5173',  # Vite development server
 ]
 CORS_ALLOW_METHODS = [
     'GET',
@@ -136,26 +136,22 @@ USE_I18N = True
 
 USE_TZ = True
 
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = '587'
-# EMAIL_HOST_USER = 'abinesilew@gmail.com'
-# EMAIL_HOST_PASSWORD ='rskeaywfstazwhry'
-# EMAIL_USE_TLS = True
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = '587'
+EMAIL_HOST_USER = 'abinesilew@gmail.com'
+EMAIL_HOST_PASSWORD ='rskeaywfstazwhry'
+EMAIL_USE_TLS = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # STATICFILES_DIRS = [
 #     os.path.join(BASE_DIR , 'build/static')
 # ]
 STATIC_ROOT = os.path.join(BASE_DIR , 'static')
-STORAGES = {
-    # ...
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -169,7 +165,7 @@ REST_FRAMEWORK = {
      'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
-
+    
 }
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
@@ -180,22 +176,19 @@ JWT_AUTH = {
 
 DJOSER = {
     'LOGIN_FIELD': 'email',
-    'USERNAME_CHANGED_EMAIL_CONFIRMATION': True,
-    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
-    'SEND_CONFIRMATION_EMAIL': True,
+    'USERNAME_CHANGED_EMAIL_CONFIRMATION': False,  # Disable
+    'PASSWORD_CHANGED_EMAIL_CONFIRMATION': False,  # Disable
+    'SEND_CONFIRMATION_EMAIL': False,  # Disable
     'SET_USERNAME_RETYPE': True,
     'SET_PASSWORD_RETYPE': True,
     'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
     'USERNAME_RESET_CONFIRM_URL': 'username/reset/confirm/{uid}/{token}',
     'ACTIVATION_URL': 'activate/{uid}/{token}',
-    'SEND_ACTIVATION_EMAIL': False,  # Email activation is turned off
+    'SEND_ACTIVATION_EMAIL': False,  # Keep this disabled
     'SERIALIZERS': {
         'user_create': 'accounts.serializers.UserCreateSerializer',
-        'user': 'accounts.serializers.UserSerializer',  # Ensure this path is correct
+        'user': 'accounts.serializers.UserSerializer',
         'user_delete': 'djoser.serializers.UserDeleteSerializer',
     },
 }
 AUTH_USER_MODEL = 'accounts.UserAccount'
-
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
